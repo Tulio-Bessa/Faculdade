@@ -1,0 +1,151 @@
+CREATE DATABASE sistema_academico;
+
+-- Cria um novo usuário (role) com uma senha. Troque 'senha_super_segura' por outra senha.
+CREATE USER gestor_academico WITH PASSWORD 'senha_super_segura';
+
+-- Concede todos os privilégios no banco de dados 'sistema_academico' para o novo usuário.
+GRANT ALL PRIVILEGES ON DATABASE sistema_academico TO gestor_academico;
+
+
+-- 1. Tabela de Departamentos (Ex: Exatas, Humanas, etc.)
+CREATE TABLE departamentos (
+    departamento_id SERIAL PRIMARY KEY,
+    nome_departamento VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- 2. Tabela de Professores (Cada professor pertence a um departamento)
+CREATE TABLE professores (
+    professor_id SERIAL PRIMARY KEY,
+    nome_professor VARCHAR(150) NOT NULL,
+    email_professor VARCHAR(100) UNIQUE,
+    departamento_id INT,
+    CONSTRAINT fk_departamento
+        FOREIGN KEY(departamento_id) 
+        REFERENCES departamentos(departamento_id)
+);
+
+-- 3. Tabela de Cursos (Cada curso também pertence a um departamento)
+CREATE TABLE cursos (
+    curso_id SERIAL PRIMARY KEY,
+    nome_curso VARCHAR(100) NOT NULL UNIQUE,
+    departamento_id INT,
+    CONSTRAINT fk_departamento_curso
+        FOREIGN KEY(departamento_id) 
+        REFERENCES departamentos(departamento_id)
+);
+
+-- 4. Tabela de Alunos (A tabela principal dos estudantes)
+CREATE TABLE alunos (
+    aluno_id SERIAL PRIMARY KEY,
+    nome_aluno VARCHAR(150) NOT NULL,
+    data_nascimento DATE
+);
+
+-- 5. Tabela de Disciplinas (Cada disciplina pertence a um curso e tem um professor)
+CREATE TABLE disciplinas (
+    disciplina_id SERIAL PRIMARY KEY,
+    nome_disciplina VARCHAR(100) NOT NULL,
+    creditos INT NOT NULL,
+    curso_id INT,
+    professor_id INT,
+    CONSTRAINT fk_curso
+        FOREIGN KEY(curso_id) 
+        REFERENCES cursos(curso_id),
+    CONSTRAINT fk_professor
+        FOREIGN KEY(professor_id) 
+        REFERENCES professores(professor_id)
+);
+
+-- 6. Tabela de Matrículas (Tabela de ligação que conecta Alunos e Disciplinas)
+CREATE TABLE matriculas (
+    matricula_id SERIAL PRIMARY KEY,
+    aluno_id INT,
+    disciplina_id INT,
+    semestre VARCHAR(10), -- Ex: '2025.1'
+    nota_final DECIMAL(4, 2), -- Ex: 95.50
+    CONSTRAINT fk_aluno
+        FOREIGN KEY(aluno_id) 
+        REFERENCES alunos(aluno_id),
+    CONSTRAINT fk_disciplina
+        FOREIGN KEY(disciplina_id) 
+        REFERENCES disciplinas(disciplina_id)
+);
+
+
+
+
+-- Inserindo Departamentos
+INSERT INTO departamentos (nome_departamento) VALUES ('Ciência da Computação'), ('Engenharia Elétrica'), ('Letras');
+
+-- Inserindo Professores
+INSERT INTO professores (nome_professor, email_professor, departamento_id) VALUES
+('Dr. Alan Turing', 'alan.t@email.com', 1),
+('Dra. Ada Lovelace', 'ada.l@email.com', 1),
+('Dr. Nikola Tesla', 'nikola.t@email.com', 2);
+
+-- Inserindo Cursos
+INSERT INTO cursos (nome_curso, departamento_id) VALUES
+('Sistemas de Informação', 1),
+('Engenharia de Controle e Automação', 2),
+('Português-Inglês', 3);
+
+-- Inserindo Alunos
+INSERT INTO alunos (nome_aluno, data_nascimento) VALUES
+('João da Silva', '2002-05-15'),
+('Maria Oliveira', '2003-09-20'),
+('Pedro Souza', '2001-11-30');
+
+-- Inserindo Disciplinas
+INSERT INTO disciplinas (nome_disciplina, creditos, curso_id, professor_id) VALUES
+('Banco de Dados', 4, 1, 2),
+('Programação Orientada a Objetos', 4, 1, 1),
+('Circuitos Elétricos', 5, 2, 3);
+
+-- Inserindo Matrículas
+INSERT INTO matriculas (aluno_id, disciplina_id, semestre, nota_final) VALUES
+(1, 1, '2025.1', 85.00), -- João em Banco de Dados
+(1, 2, '2025.1', 92.50), -- João em POO
+(2, 1, '2025.1', 88.00), -- Maria em Banco de Dados
+(3, 3, '2025.1', 76.00); -- Pedro em Circuitos Elétricos
+
+
+
+SELECT
+    a.nome_aluno,
+    d.nome_disciplina
+FROM
+    alunos a
+JOIN
+    matriculas m ON a.aluno_id = m.aluno_id
+JOIN
+    disciplinas d ON m.disciplina_id = d.disciplina_id;
+
+
+SELECT 
+    d.nome_disciplina,
+    c.nome_curso,
+    p.nome_professor
+FROM 
+    disciplinas d
+JOIN
+    cursos c ON d.curso_id = c.curso_id
+JOIN
+    professores p ON d.professor_id = p.professor_id;
+
+
+
+SELECT
+    a.nome_aluno,
+    d.nome_disciplina,
+    m.nota_final,
+    dep.nome_departamento
+FROM
+    alunos a
+JOIN matriculas m ON a.aluno_id = m.aluno_id
+JOIN disciplinas d ON m.disciplina_id = d.disciplina_id
+JOIN cursos c ON d.curso_id = c.curso_id
+JOIN departamentos dep ON c.departamento_id = dep.departamento_id
+WHERE
+    dep.nome_departamento = 'Ciência da Computação';
+
+
